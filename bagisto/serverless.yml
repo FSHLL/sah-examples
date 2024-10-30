@@ -1,0 +1,74 @@
+service: sah-bagisto-demo
+
+provider:
+    name: aws
+    # The AWS region in which to deploy (us-east-1 is the default)
+    region: us-east-1
+    stage: ${opt:stage, 'dev'}
+    # Environment variables
+    environment:
+        APP_ENV: production # Or use ${sls:stage} if you want the environment to match the stage
+        SESSION_DRIVER: cookie # Change to database if you have set up a database
+        QUEUE_CONNECTION: sqs
+        SQS_QUEUE: ${construct:jobs.queueUrl}
+        BREF_BINARY_RESPONSES: '1'
+
+package:
+    # Files and directories to exclude from deployment
+    patterns:
+        - '!node_modules/**'
+        - '!resources/assets/**'
+        - '!tests/**'
+
+functions:
+
+    # This function runs the Laravel website/API
+    web:
+        handler: public/index.php
+        runtime: php-81-fpm
+        timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+        layers:
+            - ${bref-extra:gd-php-81}
+        events:
+            - httpApi: '*'
+
+    # This function lets us run artisan commands in Lambda
+    artisan:
+        handler: artisan
+        runtime: php-81-console
+        timeout: 720 # in seconds
+        # Uncomment to also run the scheduler every minute
+        events:
+            - schedule:
+                rate: rate(1 minute)
+                input: '"schedule:run"'
+
+plugins:
+    - ./vendor/bref/bref
+    - ./vendor/bref/extra-php-extensions
+    - serverless-lift
+    - sah-plugin
+
+constructs:
+    jobs:
+        type: queue
+        worker:
+            handler: Bref\LaravelBridge\Queue\QueueHandler
+            runtime: php-81
+            timeout: 60 # seconds
+    website:
+        type: server-side-website
+        assets:
+            '/build/*': public/build
+            '/storage/*': public/storage
+            '/themes/*': public/themes
+            '/favicon.ico': public/favicon.ico
+            '/robots.txt': public/robots.txt
+
+custom:
+    sah:
+        activeAliasName: 'ACTIVE'  # Default: 'INACTIVE'
+        useActiveAliasInEvents: true   # Default: false. Whether to change API Gateway to target the active alias or not
+        makeLambdasActive: true  # Default: false. Whether to apply the active alias to the lambdas that are being deployed now. Could vary per environment.
+        sahUrl: https://{app_url}/api/projects/{project_id}/deploy
+        sahToken: appToken
