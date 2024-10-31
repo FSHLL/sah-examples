@@ -7,20 +7,20 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Laravel\Sanctum\HasApiTokens;
 use Shetabit\Visitor\Traits\Visitor;
 use Webkul\Checkout\Models\CartProxy;
 use Webkul\Core\Models\SubscribersListProxy;
 use Webkul\Customer\Contracts\Customer as CustomerContract;
 use Webkul\Customer\Database\Factories\CustomerFactory;
-use Webkul\Shop\Mail\Customer\ResetPasswordNotification;
 use Webkul\Product\Models\ProductReviewProxy;
-use Webkul\Sales\Models\OrderProxy;
-use Webkul\Customer\Models\CustomerNoteProxy;
 use Webkul\Sales\Models\InvoiceProxy;
+use Webkul\Sales\Models\OrderProxy;
+use Webkul\Shop\Mail\Customer\ResetPasswordNotification;
 
 class Customer extends Authenticatable implements CustomerContract
 {
-    use HasFactory, Notifiable, Visitor;
+    use HasApiTokens, HasFactory, Notifiable, Visitor;
 
     /**
      * The table associated with the model.
@@ -79,20 +79,9 @@ class Customer extends Authenticatable implements CustomerContract
     protected $appends = ['image_url'];
 
     /**
-     * Create a new factory instance for the model.
-     *
-     * @return \Webkul\Customer\Database\Factories\CustomerFactory
-     */
-    protected static function newFactory()
-    {
-        return CustomerFactory::new();
-    }
-
-    /**
      * Send the password reset notification.
      *
      * @param  string  $token
-     * @return void
      */
     public function sendPasswordResetNotification($token): void
     {
@@ -111,12 +100,10 @@ class Customer extends Authenticatable implements CustomerContract
 
     /**
      * Get the customer full name.
-     *
-     * @return string
      */
     public function getNameAttribute(): string
     {
-        return ucfirst($this->first_name) . ' ' . ucfirst($this->last_name);
+        return ucfirst($this->first_name).' '.ucfirst($this->last_name);
     }
 
     /**
@@ -137,7 +124,6 @@ class Customer extends Authenticatable implements CustomerContract
      * Is email exists or not.
      *
      * @param  string  $email
-     * @return bool
      */
     public function emailExists($email): bool
     {
@@ -181,12 +167,13 @@ class Customer extends Authenticatable implements CustomerContract
             ->where('default_address', 1);
     }
 
-     /**
+    /**
      * Customer's relation with invoice .
      *
      * @return \Illuminate\Database\Eloquent\Relations\hasManyThrough
      */
-    public function invoices() {
+    public function invoices()
+    {
         return $this->hasManyThrough(InvoiceProxy::modelClass(), OrderProxy::modelClass());
     }
 
@@ -202,8 +189,6 @@ class Customer extends Authenticatable implements CustomerContract
 
     /**
      * Is wishlist shared by the customer.
-     *
-     * @return bool
      */
     public function isWishlistShared(): bool
     {
@@ -292,5 +277,15 @@ class Customer extends Authenticatable implements CustomerContract
     public function subscription()
     {
         return $this->hasOne(SubscribersListProxy::modelClass(), 'customer_id');
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Webkul\Customer\Database\Factories\CustomerFactory
+     */
+    protected static function newFactory()
+    {
+        return CustomerFactory::new();
     }
 }

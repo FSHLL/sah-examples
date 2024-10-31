@@ -3,8 +3,8 @@
 namespace Webkul\Shop\Http\Controllers\Customer\Account;
 
 use Illuminate\Support\Facades\Event;
-use Webkul\Shop\Http\Controllers\Controller;
 use Webkul\Customer\Repositories\CustomerAddressRepository;
+use Webkul\Shop\Http\Controllers\Controller;
 use Webkul\Shop\Http\Requests\Customer\AddressRequest;
 
 class AddressController extends Controller
@@ -14,7 +14,8 @@ class AddressController extends Controller
      *
      * @return void
      */
-    public function __construct(protected CustomerAddressRepository $customerAddressRepository) {
+    public function __construct(protected CustomerAddressRepository $customerAddressRepository)
+    {
     }
 
     /**
@@ -122,7 +123,7 @@ class AddressController extends Controller
             'state',
             'city',
             'postcode',
-            'phone'
+            'phone',
         ]), [
             'address1' => implode(PHP_EOL, array_filter($request->input('address1'))),
             'address2' => implode(PHP_EOL, array_filter($request->input('address2', []))),
@@ -145,11 +146,13 @@ class AddressController extends Controller
      */
     public function makeDefault($id)
     {
-        if ($default = auth()->guard('customer')->user()->default_address) {
-            $this->customerAddressRepository->find($default->id)->update(['default_address' => 0]);
+        $customer = auth()->guard('customer')->user();
+
+        if ($default = $customer->default_address) {
+            $default->update(['default_address' => 0]);
         }
 
-        if ($address = $this->customerAddressRepository->find($id)) {
+        if ($address = $customer->addresses()->find($id)) {
             $address->update(['default_address' => 1]);
         } else {
             session()->flash('success', trans('shop::app.customers.account.addresses.default-delete'));

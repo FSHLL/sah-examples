@@ -9,12 +9,17 @@
 <v-email-share></v-email-share>
 
 @push('scripts')
-    <script type="text/x-template" id="v-email-share-template">
+    <script
+        type="text/x-template"
+        id="v-email-share-template"
+    >
         <li class="transition-all hover:opacity-[0.8]">
             <a 
                 href="{{ $emailURL }}" 
                 target="_blank"
                 aria-label="Email"
+                role="button"
+                tabindex="0"
             >
                 @include('social_share::icons.email')
             </a>

@@ -12,7 +12,8 @@ class SubscriptionController extends Controller
      *
      * @return void
      */
-    public function __construct(protected SubscribersListRepository $subscriptionRepository) {
+    public function __construct(protected SubscribersListRepository $subscriptionRepository)
+    {
     }
 
     /**
@@ -38,12 +39,21 @@ class SubscriptionController extends Controller
 
         Event::dispatch('customer.subscription.before');
 
+        $customer = auth()->user();
+
         $subscription = $this->subscriptionRepository->create([
             'email'         => $email,
             'channel_id'    => core()->getCurrentChannel()->id,
             'is_subscribed' => 1,
             'token'         => uniqid(),
+            'customer_id'   => $customer->id ?? null,
         ]);
+
+        if ($customer) {
+            $customer->subscribed_to_news_letter = 1;
+
+            $customer->save();
+        }
 
         Event::dispatch('customer.subscription.after', $subscription);
 

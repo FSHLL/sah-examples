@@ -2,11 +2,11 @@
 
 namespace Webkul\Admin\Http\Controllers\Sales;
 
-use Webkul\Admin\Http\Controllers\Controller;
-use Webkul\Sales\Repositories\OrderRepository;
-use Webkul\Sales\Repositories\OrderItemRepository;
-use Webkul\Sales\Repositories\RefundRepository;
 use Webkul\Admin\DataGrids\Sales\OrderRefundDataGrid;
+use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\Sales\Repositories\OrderItemRepository;
+use Webkul\Sales\Repositories\OrderRepository;
+use Webkul\Sales\Repositories\RefundRepository;
 
 class RefundController extends Controller
 {
@@ -19,14 +19,13 @@ class RefundController extends Controller
         protected OrderRepository $orderRepository,
         protected OrderItemRepository $orderItemRepository,
         protected RefundRepository $refundRepository
-    )
-    {
+    ) {
     }
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\View
+     * @return \Illuminate\View\View
      */
     public function index()
     {
@@ -40,10 +39,9 @@ class RefundController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @param  int  $orderId
-     * @return \Illuminate\Http\View
+     * @return \Illuminate\View\View
      */
-    public function create($orderId)
+    public function create(int $orderId)
     {
         $order = $this->orderRepository->findOrFail($orderId);
 
@@ -53,10 +51,9 @@ class RefundController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  int  $orderId
      * @return \Illuminate\Http\Response
      */
-    public function store($orderId)
+    public function store(int $orderId)
     {
         $order = $this->orderRepository->findOrFail($orderId);
 
@@ -67,12 +64,13 @@ class RefundController extends Controller
         }
 
         $this->validate(request(), [
+            'refund.items'   => 'required|array',
             'refund.items.*' => 'required|numeric|min:0',
         ]);
 
         $data = request()->all();
 
-        if (! $data['refund']['shipping']) {
+        if (! isset($data['refund']['shipping'])) {
             $data['refund']['shipping'] = 0;
         }
 
@@ -95,7 +93,9 @@ class RefundController extends Controller
         }
 
         if ($refundAmount > $maxRefundAmount) {
-            session()->flash('error', trans('admin::app.sales.refunds.create.refund-limit-error', ['amount' => core()->formatBasePrice($maxRefundAmount)]));
+            session()->flash('error', trans('admin::app.sales.refunds.create.refund-limit-error', [
+                'amount' => core()->formatBasePrice($maxRefundAmount),
+            ]));
 
             return redirect()->back();
         }
@@ -110,10 +110,9 @@ class RefundController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  int  $orderId
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
-    public function updateQty($orderId)
+    public function updateQty(int $orderId)
     {
         $data = $this->refundRepository->getOrderItemsRefundSummary(request()->input(), $orderId);
 
@@ -128,7 +127,7 @@ class RefundController extends Controller
      * Show the view for the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\View
+     * @return \Illuminate\View\View
      */
     public function view($id)
     {

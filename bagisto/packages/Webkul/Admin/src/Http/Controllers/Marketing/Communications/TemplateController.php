@@ -4,9 +4,9 @@ namespace Webkul\Admin\Http\Controllers\Marketing\Communications;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Event;
+use Webkul\Admin\DataGrids\Marketing\Communications\EmailTemplateDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Marketing\Repositories\TemplateRepository;
-use Webkul\Admin\DataGrids\Marketing\Communications\EmailTemplateDataGrid;
 
 class TemplateController extends Controller
 {
@@ -61,7 +61,7 @@ class TemplateController extends Controller
         $template = $this->templateRepository->create(request()->only([
             'name',
             'status',
-            'content'
+            'content',
         ]));
 
         Event::dispatch('marketing.templates.create.after', $template);
@@ -74,10 +74,9 @@ class TemplateController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
      * @return \Illuminate\View\View
      */
-    public function edit($id)
+    public function edit(int $id)
     {
         $template = $this->templateRepository->findOrFail($id);
 
@@ -87,10 +86,9 @@ class TemplateController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update($id)
+    public function update(int $id)
     {
         $this->validate(request(), [
             'name'    => 'required',
@@ -103,7 +101,7 @@ class TemplateController extends Controller
         $template = $this->templateRepository->update(request()->only([
             'name',
             'status',
-            'content'
+            'content',
         ]), $id);
 
         Event::dispatch('marketing.templates.update.after', $template);
@@ -115,14 +113,9 @@ class TemplateController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
-        $this->templateRepository->findOrFail($id);
-
         try {
             Event::dispatch('marketing.templates.delete.before', $id);
 
@@ -131,13 +124,15 @@ class TemplateController extends Controller
             Event::dispatch('marketing.templates.delete.after', $id);
 
             return new JsonResponse([
-                'message' => trans('admin::app.marketing.communications.templates.delete-success')
+                'message' => trans('admin::app.marketing.communications.templates.delete-success'),
             ]);
         } catch (\Exception $e) {
         }
 
         return new JsonResponse([
-            'message' => trans('admin::app.marketing.communications.templates.delete-failed', ['name' => 'admin::app.marketing.communications.templates.email-template']
-        )], 400);
+            'message' => trans('admin::app.marketing.communications.templates.delete-failed', [
+                'name' => 'admin::app.marketing.communications.templates.email-template',
+            ]),
+        ], 400);
     }
 }

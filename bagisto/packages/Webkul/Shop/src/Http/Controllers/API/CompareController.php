@@ -2,8 +2,8 @@
 
 namespace Webkul\Shop\Http\Controllers\API;
 
-use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Response;
 use Webkul\Customer\Repositories\CompareItemRepository;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Shop\Http\Resources\CompareItemResource;
@@ -18,8 +18,7 @@ class CompareController extends APIController
     public function __construct(
         protected CompareItemRepository $compareItemRepository,
         protected ProductRepository $productRepository
-    )
-    {
+    ) {
     }
 
     /**
@@ -53,6 +52,10 @@ class CompareController extends APIController
      */
     public function store()
     {
+        $this->validate(request(), [
+            'product_id' => 'required|integer|exists:products,id',
+        ]);
+
         $compareProduct = $this->compareItemRepository->findOneByField([
             'customer_id'  => auth()->guard('customer')->user()->id,
             'product_id'   => request()->input('product_id'),
@@ -96,11 +99,11 @@ class CompareController extends APIController
                 ->pluck('product_id')
                 ->toArray();
         }
-    
+
         $products = $this->productRepository
             ->whereIn('id', $productIds ?? [])
             ->get();
-    
+
         return new JsonResource([
             'data'    => CompareItemResource::collection($products),
             'message' => trans('shop::app.compare.remove-success'),

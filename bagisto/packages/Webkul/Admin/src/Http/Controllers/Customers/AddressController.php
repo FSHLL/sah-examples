@@ -4,12 +4,12 @@ namespace Webkul\Admin\Http\Controllers\Customers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Event;
+use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Core\Rules\AlphaNumericSpace;
 use Webkul\Core\Rules\PhoneNumber;
-use Webkul\Customer\Rules\VatIdRule;
-use Webkul\Admin\Http\Controllers\Controller;
-use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Customer\Repositories\CustomerAddressRepository;
+use Webkul\Customer\Repositories\CustomerRepository;
+use Webkul\Customer\Rules\VatIdRule;
 
 class AddressController extends Controller
 {
@@ -21,17 +21,15 @@ class AddressController extends Controller
     public function __construct(
         protected CustomerRepository $customerRepository,
         protected CustomerAddressRepository $customerAddressRepository
-    )
-    {
+    ) {
     }
 
     /**
      * Fetch address by customer id.
      *
-     * @param  int  $id
      * @return \Illuminate\View\View
      */
-    public function index($id)
+    public function index(int $id)
     {
         $customer = $this->customerRepository->find($id);
 
@@ -41,10 +39,9 @@ class AddressController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @param  int  $id
      * @return \Illuminate\View\View
      */
-    public function create($id)
+    public function create(int $id)
     {
         $customer = $this->customerRepository->find($id);
 
@@ -53,8 +50,6 @@ class AddressController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function store(): JsonResponse
     {
@@ -101,10 +96,9 @@ class AddressController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @param  int  $id
      * @return \Illuminate\View\View
      */
-    public function edit($id)
+    public function edit(int $id)
     {
         $address = $this->customerAddressRepository->find($id);
 
@@ -113,11 +107,8 @@ class AddressController extends Controller
 
     /**
      * Edit's the pre made resource of customer called address.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function update($id): JsonResponse
+    public function update(int $id): JsonResponse
     {
         $this->validate(request(), [
             'company_name' => [new AlphaNumericSpace],
@@ -173,7 +164,7 @@ class AddressController extends Controller
 
         $address = $this->customerAddressRepository->findOneWhere([
             'id'              => request('set_as_default'),
-            'customer_id'     => $id
+            'customer_id'     => $id,
         ]);
 
         if ($address) {
@@ -188,10 +179,9 @@ class AddressController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(int $id)
     {
         Event::dispatch('customer.addresses.delete.before', $id);
 

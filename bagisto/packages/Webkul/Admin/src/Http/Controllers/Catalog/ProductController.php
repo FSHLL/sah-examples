@@ -5,29 +5,27 @@ namespace Webkul\Admin\Http\Controllers\Catalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Arr;
+use Webkul\Admin\DataGrids\Catalog\ProductDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Admin\Http\Requests\InventoryRequest;
+use Webkul\Admin\Http\Requests\MassDestroyRequest;
+use Webkul\Admin\Http\Requests\MassUpdateRequest;
 use Webkul\Admin\Http\Requests\ProductForm;
+use Webkul\Admin\Http\Resources\AttributeResource;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
+use Webkul\Core\Rules\Slug;
 use Webkul\Inventory\Repositories\InventorySourceRepository;
-use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Product\Helpers\ProductType;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Repositories\ProductDownloadableLinkRepository;
 use Webkul\Product\Repositories\ProductDownloadableSampleRepository;
 use Webkul\Product\Repositories\ProductInventoryRepository;
-use Webkul\Admin\Http\Resources\AttributeResource;
-use Webkul\Admin\DataGrids\Catalog\ProductDataGrid;
-use Webkul\Admin\Http\Requests\MassUpdateRequest;
-use Webkul\Admin\Http\Requests\MassDestroyRequest;
-use Webkul\Core\Rules\Slug;
-use Webkul\Product\Helpers\ProductType;
-use Webkul\Product\Facades\ProductImage;
+use Webkul\Product\Repositories\ProductRepository;
 
 class ProductController extends Controller
 {
     /*
-    * Using const variable for status 
+    * Using const variable for status
     */
     const ACTIVE_STATUS = 1;
 
@@ -39,13 +37,12 @@ class ProductController extends Controller
     public function __construct(
         protected AttributeFamilyRepository $attributeFamilyRepository,
         protected InventorySourceRepository $inventorySourceRepository,
-        protected ProductRepository $productRepository,
         protected ProductAttributeValueRepository $productAttributeValueRepository,
         protected ProductDownloadableLinkRepository $productDownloadableLinkRepository,
         protected ProductDownloadableSampleRepository $productDownloadableSampleRepository,
-        protected ProductInventoryRepository $productInventoryRepository
-    )
-    {
+        protected ProductInventoryRepository $productInventoryRepository,
+        protected ProductRepository $productRepository,
+    ) {
     }
 
     /**
@@ -107,21 +104,19 @@ class ProductController extends Controller
             return new JsonResponse([
                 'data' => [
                     'attributes' => AttributeResource::collection($configurableFamily->configurable_attributes),
-                ]
+                ],
             ]);
         }
 
         Event::dispatch('catalog.product.create.before');
 
-        $data = request()->only([
+        $product = $this->productRepository->create(request()->only([
             'type',
             'attribute_family_id',
             'sku',
             'super_attributes',
-            'family'
-        ]);
-
-        $product = $this->productRepository->create($data);
+            'family',
+        ]));
 
         Event::dispatch('catalog.product.create.after', $product);
 
@@ -130,17 +125,16 @@ class ProductController extends Controller
         return new JsonResponse([
             'data' => [
                 'redirect_url' => route('admin.catalog.products.edit', $product->id),
-            ]
+            ],
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
      * @return \Illuminate\View\View
      */
-    public function edit($id)
+    public function edit(int $id)
     {
         $product = $this->productRepository->findOrFail($id);
 
@@ -152,10 +146,9 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(ProductForm $request, $id)
+    public function update(ProductForm $request, int $id)
     {
         Event::dispatch('catalog.product.update.before', $id);
 
@@ -171,10 +164,9 @@ class ProductController extends Controller
     /**
      * Update inventories.
      *
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateInventories(InventoryRequest $inventoryRequest, $id)
+    public function updateInventories(InventoryRequest $inventoryRequest, int $id)
     {
         $product = $this->productRepository->findOrFail($id);
 
@@ -193,10 +185,9 @@ class ProductController extends Controller
     /**
      * Uploads downloadable file.
      *
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function uploadLink($id)
+    public function uploadLink(int $id)
     {
         return response()->json(
             $this->productDownloadableLinkRepository->upload(request()->all(), $id)
@@ -226,10 +217,9 @@ class ProductController extends Controller
     /**
      * Uploads downloadable sample file.
      *
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function uploadSample($id)
+    public function uploadSample(int $id)
     {
         return response()->json(
             $this->productDownloadableSampleRepository->upload(request()->all(), $id)
@@ -238,14 +228,9 @@ class ProductController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
-        $product = $this->productRepository->findOrFail($id);
-
         try {
             Event::dispatch('catalog.product.delete.before', $id);
 
@@ -267,9 +252,6 @@ class ProductController extends Controller
 
     /**
      * Mass delete the products.
-     *
-     * @param MassDestroyRequest $massDestroyRequest
-     * @return \Illuminate\Http\JsonResponse
      */
     public function massDestroy(MassDestroyRequest $massDestroyRequest): JsonResponse
     {
@@ -278,31 +260,28 @@ class ProductController extends Controller
         try {
             foreach ($productIds as $productId) {
                 $product = $this->productRepository->find($productId);
-    
+
                 if (isset($product)) {
                     Event::dispatch('catalog.product.delete.before', $productId);
-    
+
                     $this->productRepository->delete($productId);
-    
+
                     Event::dispatch('catalog.product.delete.after', $productId);
                 }
             }
 
             return new JsonResponse([
-                'message' => trans('admin::app.catalog.products.index.datagrid.mass-delete-success')
+                'message' => trans('admin::app.catalog.products.index.datagrid.mass-delete-success'),
             ]);
         } catch (\Exception $e) {
             return new JsonResponse([
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
      * Mass update the products.
-     *
-     * @param MassUpdateRequest $massUpdateRequest
-     * @return \Illuminate\Http\JsonResponse
      */
     public function massUpdate(MassUpdateRequest $massUpdateRequest): JsonResponse
     {
@@ -319,9 +298,9 @@ class ProductController extends Controller
 
             Event::dispatch('catalog.product.update.after', $product);
         }
-        
+
         return new JsonResponse([
-            'message' => trans('admin::app.catalog.products.index.datagrid.mass-update-success')
+            'message' => trans('admin::app.catalog.products.index.datagrid.mass-update-success'),
         ], 200);
     }
 

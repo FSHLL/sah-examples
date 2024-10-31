@@ -5,7 +5,6 @@ namespace Webkul\Admin\Mail\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class InvoicedNotification extends Mailable
 {
@@ -19,10 +18,8 @@ class InvoicedNotification extends Mailable
      * @return void
      */
     public function __construct(
-        public $invoice,
-        public $email = null
-    )
-    {
+        public $invoice
+    ) {
     }
 
     /**
@@ -32,9 +29,11 @@ class InvoicedNotification extends Mailable
      */
     public function build()
     {
+        $order = $this->invoice->order;
+
         return $this->from(core()->getSenderEmailDetails()['email'], core()->getSenderEmailDetails()['name'])
-            ->to($this->email ?? $this->invoice->order->customer_email, $this->invoice->order->customer_full_name)
+            ->to($order->customer_email, $order->customer_full_name)
             ->subject(trans('admin::app.emails.orders.invoiced.subject'))
-            ->view('admin::emails.orders.invoiced');
+            ->view('shop::emails.orders.invoiced');
     }
 }

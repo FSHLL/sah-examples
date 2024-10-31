@@ -5,7 +5,6 @@ namespace Webkul\Shop\Mail\Customer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SubscriptionNotification extends Mailable
 {
@@ -13,7 +12,7 @@ class SubscriptionNotification extends Mailable
 
     /**
      * Create a mailable instance
-     * 
+     *
      * @param  \Webkul\Customer\Models\Customer  $customer
      * @return void
      */
@@ -32,7 +31,7 @@ class SubscriptionNotification extends Mailable
             ->to($this->customer->email)
             ->subject(trans('shop::app.emails.customers.subscribed.subject'))
             ->view('shop::emails.customers.subscribed', [
-                'fullName' => $this->customer->first_name . ' ' . $this->customer->last_name,
+                'fullName' => $this->customer->first_name.' '.$this->customer->last_name,
             ]);
     }
 }

@@ -13,12 +13,17 @@
 <v-pinterest-share></v-pinterest-share>
 
 @push('scripts')
-    <script type="text/x-template" id="v-pinterest-share-template">
+    <script
+        type="text/x-template"
+        id="v-pinterest-share-template"
+    >
         <li class="transition-all hover:opacity-[0.8]">
             <a 
                 href="#" 
                 @click="openSharePopup"
                 aria-label="Pinterest"
+                role="button"
+                tabindex="0"
             >
                 @include('social_share::icons.pinterest')
             </a>

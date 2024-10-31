@@ -4,12 +4,12 @@ namespace Webkul\Admin\Http\Controllers\Catalog;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Event;
+use Webkul\Admin\DataGrids\Catalog\AttributeDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
-use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Admin\Http\Requests\MassDestroyRequest;
+use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Core\Rules\Code;
 use Webkul\Product\Repositories\ProductRepository;
-use Webkul\Admin\DataGrids\Catalog\AttributeDataGrid;
 
 class AttributeController extends Controller
 {
@@ -21,8 +21,7 @@ class AttributeController extends Controller
     public function __construct(
         protected AttributeRepository $attributeRepository,
         protected ProductRepository $productRepository
-    )
-    {
+    ) {
     }
 
     /**
@@ -63,11 +62,9 @@ class AttributeController extends Controller
             'default_value' => 'integer',
         ]);
 
-        $requestData =  request()->all();
+        $requestData = request()->all();
 
-        if (! $requestData['default_value']) {
-            $requestData['default_value'] = Null;
-        }
+        $requestData['default_value'] ??= null;
 
         Event::dispatch('catalog.attribute.create.before');
 
@@ -83,10 +80,9 @@ class AttributeController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
      * @return \Illuminate\View\View
      */
-    public function edit($id)
+    public function edit(int $id)
     {
         $attribute = $this->attributeRepository->findOrFail($id);
 
@@ -96,36 +92,33 @@ class AttributeController extends Controller
     /**
      * Get attribute options associated with attribute.
      *
-     * @param  int  $id
      * @return \Illuminate\View\View
      */
-    public function getAttributeOptions($id)
+    public function getAttributeOptions(int $id)
     {
         $attribute = $this->attributeRepository->findOrFail($id);
 
-        return $attribute->options()->get();
+        return $attribute->options()->orderBy('sort_order')->get();
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update($id)
+    public function update(int $id)
     {
         $this->validate(request(), [
-            'code'          => ['required', 'unique:attributes,code,' . $id, new Code],
+            'code'          => ['required', 'unique:attributes,code,'.$id, new Code],
             'admin_name'    => 'required',
             'type'          => 'required',
             'default_value' => 'integer',
         ]);
 
-
-        $requestData =  request()->all();
+        $requestData = request()->all();
 
         if (! $requestData['default_value']) {
-            $requestData['default_value'] = Null;
+            $requestData['default_value'] = null;
         }
 
         Event::dispatch('catalog.attribute.update.before', $id);
@@ -141,11 +134,8 @@ class AttributeController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         $attribute = $this->attributeRepository->findOrFail($id);
 
@@ -163,21 +153,18 @@ class AttributeController extends Controller
             Event::dispatch('catalog.attribute.delete.after', $id);
 
             return new JsonResponse([
-                'message' => trans('admin::app.catalog.attributes.delete-success')
+                'message' => trans('admin::app.catalog.attributes.delete-success'),
             ]);
         } catch (\Exception $e) {
         }
 
         return new JsonResponse([
-            'message' => trans('admin::app.catalog.attributes.delete-failed')
+            'message' => trans('admin::app.catalog.attributes.delete-failed'),
         ], 500);
     }
 
     /**
      * Remove the specified resources from database.
-     *
-     * @param MassDestroyRequest $massDestroyRequest
-     * @return \Illuminate\Http\JsonResponse
      */
     public function massDestroy(MassDestroyRequest $massDestroyRequest): JsonResponse
     {
@@ -187,7 +174,9 @@ class AttributeController extends Controller
             $attribute = $this->attributeRepository->find($index);
 
             if (! $attribute->is_user_defined) {
-                return response()->json([], 422);
+                return response()->json([
+                    'message' => trans('admin::app.catalog.attributes.delete-failed'),
+                ], 422);
             }
         }
 
@@ -200,17 +189,16 @@ class AttributeController extends Controller
         }
 
         return new JsonResponse([
-            'message' => trans('admin::app.catalog.attributes.index.datagrid.mass-delete-success')
+            'message' => trans('admin::app.catalog.attributes.index.datagrid.mass-delete-success'),
         ]);
     }
 
     /**
      * Get super attributes of product.
      *
-     * @param  int  $id
-     * @return  \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function productSuperAttributes($id)
+    public function productSuperAttributes(int $id)
     {
         $product = $this->productRepository->findOrFail($id);
 

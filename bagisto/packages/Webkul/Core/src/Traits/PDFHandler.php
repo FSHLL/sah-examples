@@ -2,16 +2,14 @@
 
 namespace Webkul\Core\Traits;
 
-use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 trait PDFHandler
 {
     /**
      * Download PDF.
      *
-     * @param  string  $html
-     * @param  string  $fileName
      * @return \Illuminate\Http\Response
      */
     protected function downloadPDF(string $html, ?string $fileName = null)
@@ -24,13 +22,12 @@ trait PDFHandler
 
         return PDF::loadHTML($this->adjustArabicAndPersianContent($html))
             ->setPaper('a4')
-            ->download($fileName . '.pdf');
+            ->download($fileName.'.pdf');
     }
 
     /**
      * Adjust arabic and persian content.
      *
-     * @param  string  $html
      * @return string
      */
     protected function adjustArabicAndPersianContent(string $html)

@@ -2,10 +2,8 @@
 
 namespace Webkul\Sales\Database\Factories;
 
-use Webkul\Sales\Models\Invoice;
-use Webkul\Sales\Models\Order;
-use Webkul\Sales\Models\OrderAddress;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Webkul\Sales\Models\Invoice;
 
 class InvoiceFactory extends Factory
 {
@@ -27,24 +25,14 @@ class InvoiceFactory extends Factory
 
     /**
      * Define the model's default state.
-     *
-     * @return array
      */
     public function definition(): array
     {
         $subTotal = $this->faker->randomFloat(2);
 
         $shippingAmount = $this->faker->randomFloat(2);
-        
+
         $taxAmount = $this->faker->randomFloat(2);
-
-        if (! isset($attributes['order_id'])) {
-            $attributes['order_id'] = Order::factory();
-        }
-
-        if (! isset($attributes['order_address_id'])) {
-            $attributes['order_address_id'] = OrderAddress::factory();
-        }
 
         return [
             'email_sent'            => 0,
@@ -62,8 +50,6 @@ class InvoiceFactory extends Factory
             'base_tax_amount'       => $taxAmount,
             'discount_amount'       => 0,
             'base_discount_amount'  => 0,
-            'order_id'              => $attributes['order_id'],
-            'order_address_id'      => $attributes['order_address_id'],
         ];
     }
 

@@ -6,8 +6,8 @@ use Cart;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Webkul\Customer\Repositories\WishlistRepository;
 use Webkul\Product\Repositories\ProductRepository;
-use Webkul\Shop\Http\Resources\WishlistResource;
 use Webkul\Shop\Http\Resources\CartResource;
+use Webkul\Shop\Http\Resources\WishlistResource;
 
 class WishlistController extends APIController
 {
@@ -19,8 +19,7 @@ class WishlistController extends APIController
     public function __construct(
         protected WishlistRepository $wishlistRepository,
         protected ProductRepository $productRepository
-    )
-    {
+    ) {
     }
 
     /**
@@ -45,6 +44,10 @@ class WishlistController extends APIController
      */
     public function store(): JsonResource
     {
+        $this->validate(request(), [
+            'product_id' => 'required|integer|exists:products,id',
+        ]);
+
         $product = $this->productRepository->find(request()->input('product_id'));
 
         if (! $product) {
